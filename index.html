@@ -312,6 +312,46 @@
     color:rgba(220,217,206,0.7);
     text-shadow:0 1px 2px rgba(0,0,0,0.8);
   }
+  .sighting-image{ cursor:pointer; }
+  .sighting-play{
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    z-index:2;
+    background:rgba(10,15,19,0.18);
+    transition:background 0.2s ease;
+  }
+  .sighting-image:hover .sighting-play{ background:rgba(10,15,19,0.34); }
+  .sighting-play-ring{
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(10,15,19,0.55);
+    border:1px solid rgba(220,217,206,0.55);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .sighting-image:hover .sighting-play-ring{ transform:scale(1.08); border-color:var(--copper); }
+  .sighting-play-ring .icon-play{
+    width:0; height:0;
+    border-style:solid;
+    border-width:6px 0 6px 9px;
+    border-color:transparent transparent transparent var(--fog);
+    margin-left:1px;
+  }
+  .sighting-play-ring .icon-pause{
+    display:flex; gap:3px;
+  }
+  .sighting-play-ring .icon-pause span{
+    width:3px; height:12px; background:var(--fog); display:block;
+  }
+  .sighting-image.is-playing .sighting-play-ring{
+    border-color:var(--copper);
+    box-shadow:0 0 0 0 rgba(189,127,75,0.55);
+    animation:sightingPulse 1.4s ease-out infinite;
+  }
+  @keyframes sightingPulse{
+    0%{ box-shadow:0 0 0 0 rgba(189,127,75,0.45); }
+    70%{ box-shadow:0 0 0 10px rgba(189,127,75,0); }
+    100%{ box-shadow:0 0 0 0 rgba(189,127,75,0); }
+  }
   @media (max-width:600px){
     .sighting{ grid-template-columns:1fr; gap:10px; }
   }
@@ -436,7 +476,8 @@
       text: "“The vultures swarm. Tie me to the mast and steer me through the fog and fear.”",
       file: "[sirens_draft2]",
       image: true,
-      img: "sighting-vhs.png"
+      img: "sighting-vhs.png",
+      audio: "clip-vhs.mp3"
     },
     {
       time: "11:09 PM",
@@ -444,7 +485,8 @@
       text: "“What do you see, actually, behind the smoke and screens?”",
       file: "[platos_cave_live?]",
       image: true,
-      img: "sighting-crowd.png"
+      img: "sighting-crowd.png",
+      audio: "clip-crowd.mp3"
     },
     {
       time: "—",
@@ -452,7 +494,8 @@
       text: "“I'm a parasite. Partly paralyzed. Crumbling as I crawl.”",
       file: "[parasite_raw]",
       image: true,
-      img: "sighting-marquee.png"
+      img: "sighting-marquee.png",
+      audio: "clip-marquee.mp3"
     },
     {
       time: "04:02",
@@ -460,7 +503,8 @@
       text: "“My addiction — a death and resurrection so sweet.”",
       file: "[parasite_alt]",
       image: true,
-      img: "sighting-comments.png"
+      img: "sighting-comments.png",
+      audio: "clip-comments.mp3"
     },
     {
       time: "—",
@@ -468,7 +512,8 @@
       text: "“Faces form on the surface of a moonlit sea — voices whispering riddles in the wind.”",
       file: "[sirens_outro]",
       image: true,
-      img: "sighting-river.png"
+      img: "sighting-river.png",
+      audio: "clip-river.mp3"
     }
   ];
 
@@ -485,10 +530,54 @@
       <div>
         <div class="sighting-text">${s.text}</div>
         <span class="sighting-file">${s.file}</span>
-        ${s.image ? `<div class="sighting-image" style="background-image:url('${s.img}')"></div>` : ''}
+        ${s.image ? `
+          <div class="sighting-image" style="background-image:url('${s.img}')">
+            ${s.audio ? `
+              <div class="sighting-play">
+                <div class="sighting-play-ring">
+                  <span class="icon-play"></span>
+                </div>
+              </div>
+              <audio class="sighting-audio" src="${s.audio}" preload="none"></audio>
+            ` : ''}
+          </div>
+        ` : ''}
       </div>
     `;
     sightingsList.appendChild(el);
+  });
+
+  // ---------- SIGHTING AUDIO PLAYBACK ----------
+  let activeAudio = null;
+  document.querySelectorAll('.sighting-image').forEach((imgEl) => {
+    const audioEl = imgEl.querySelector('.sighting-audio');
+    if (!audioEl) return;
+    const ring = imgEl.querySelector('.sighting-play-ring');
+
+    const setPlayingUI = (isPlaying) => {
+      imgEl.classList.toggle('is-playing', isPlaying);
+      ring.innerHTML = isPlaying
+        ? '<div class="icon-pause"><span></span><span></span></div>'
+        : '<span class="icon-play"></span>';
+    };
+
+    audioEl.addEventListener('ended', () => setPlayingUI(false));
+    audioEl.addEventListener('pause', () => setPlayingUI(false));
+    audioEl.addEventListener('play', () => setPlayingUI(true));
+
+    imgEl.addEventListener('click', () => {
+      if (activeAudio && activeAudio !== audioEl) {
+        activeAudio.pause();
+        activeAudio.currentTime = 0;
+      }
+      if (audioEl.paused) {
+        audioEl.play();
+        activeAudio = audioEl;
+      } else {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+      }
+    });
   });
 </script>
 
